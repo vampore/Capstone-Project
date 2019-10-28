@@ -3,13 +3,13 @@ clear
 
 s = daq.createSession('ni');
 addAnalogInputChannel(s,'cDAQ1Mod1', 0:3, 'Microphone');
-% addAnalogInputChannel(s,'cDAQ2Mod1', 0, 'Microphone');
+addAnalogInputChannel(s,'cDAQ2Mod1', 0, 'Microphone');
 s.DurationInSeconds = 6;
 s.Channels(1).Sensitivity = 0.037;
 s.Channels(2).Sensitivity = 0.037;
 s.Channels(3).Sensitivity = 0.037;
 s.Channels(4).Sensitivity = 0.037;
-% s.Channels(5).Sensitivity = 0.037;
+s.Channels(5).Sensitivity = 0.037;
 s.Rate = 16000;
 
 disp ('start recoding')

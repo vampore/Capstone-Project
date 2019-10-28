@@ -91,11 +91,23 @@ classdef iRobotCreate < handle
             angle = atan2(yDiff,xDiff);
             angleDiff = angle - self.yaw;
             self.yaw = angle;
-            turnAngle(self.serialObject,0.05,angleDiff);
+            turnAngle(self.serialObject,0.05,rad2deg(angleDiff));
+            self.lastAngle = AngleSensorRoomba(self.serialObject);
+            turnAngle(self.serialObject,0.05,rad2deg(angleDiff-self.lastAngle));
             d = sqrt((xDiff^2)+(yDiff^2));
             travelDist(self.serialObject,0.1,d);
             self.lastDistance = DistanceSensorRoomba(self.serialObject);
             travelDist(self.serialObject,0.1,d-self.lastDistance);
+        end
+        %% Make a beep to notify a wall has been found
+        function WallBeep(self)
+            BeepRoomba(self.serialObject);
+        end
+        %% Make a double beep to notify a room has been established
+        function RoomBeep(self)
+            BeepRoomba(self.serialObject);
+            pause(.75);
+            BeepRoomba(self.serialObject);
         end
     end
 end

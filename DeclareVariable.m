@@ -4,7 +4,7 @@ initialLoc = [0 0];
 %> Next source location
 newSource = [0 0];
 %> Distance moved by each step
-dist_move = 0.5;
+dist_move = 0.25;
 %> Hold the correct source location
 resultSource = [];
 %> Hold good image source
@@ -23,4 +23,6 @@ potentialLines = [];
 foundLines = [];
 %> Variable to hold how the robot has moved
 sourcePlot = [];
+%> Initialize the robot
+robot = iRobotCreate(3);
 disp('Necessary variables have been declared');

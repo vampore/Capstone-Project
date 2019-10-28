@@ -1,3 +1,4 @@
+    %% Input the first image source location
     a = input("Insert x image source ");
     b = input("Insert y image source ");
     IS = [a b];
@@ -103,8 +104,8 @@
                 disp('Cannot find a good image source at the second stop, everything restarts');
                 newSource=previousSource; %should change to previous location rather than initial one
                 angle_rnd=-pi+2*pi*rand;
-                newSource(1)=newSource(1)+0.5*cos(angle_rnd);
-                newSource(2)=newSource(2)+0.5*sin(angle_rnd);
+                newSource(1)=newSource(1)+0.2*cos(angle_rnd);
+                newSource(2)=newSource(2)+0.2*sin(angle_rnd);
                 resultSource=[];
                 resultIS=[];
                 resultSlope=[];
@@ -130,8 +131,8 @@
                 newSource=previousSource; %should change to previous location rather than initial one
                 angle_rnd=-pi+2*pi*rand;
                 disp('Cannot find a correct image source, it will restart');
-                newSource(1)=newSource(1)+0.5*cos(angle_rnd);           
-                newSource(2)=newSource(2)+0.5*sin(angle_rnd);           
+                newSource(1)=newSource(1)+0.2*cos(angle_rnd);           
+                newSource(2)=newSource(2)+0.2*sin(angle_rnd);           
                 resultSource=[];
                 resultIS=[];
                 resultSlope=[];
@@ -147,6 +148,7 @@
     %% Check if any wall can be confirmed
     if size(resultSlope,1)==3
         foundLines = [foundLines ; mean(resultSlope) mean(resultIntercept)];
+        robot.WallBeep;
         disp('A real wall is formed');
         try
             resultSource=[];
@@ -157,12 +159,15 @@
             stops = 1;
             angle_rnd=-pi+2*pi*rand;
             disp(angle_rnd);
-            newSource(1)=newSource(1)+0.5*cos(angle_rnd);           
-            newSource(2)=newSource(2)+0.5*sin(angle_rnd);            
+            newSource(1)=newSource(1)+0.2*cos(angle_rnd);           
+            newSource(2)=newSource(2)+0.2*sin(angle_rnd);            
         catch
             disp('Cannot clear the container');
         end
     end
+    
+    robot.MoveStraightXY(newSource(1),newSource(2));
+    %% If there are more than two walss found, find their intersections
     if size(foundLines,1)>2
         for i=1:size(foundLines,1)
             for j=1:size(foundLines,1)
@@ -170,37 +175,43 @@
                 intersection_y(i,j)=foundLines(j,1)*intersection_x(i,j)+foundLines(j,2);
             end
         end
-        intersection_points=[intersection_x(:) intersection_y(:)];
-        intersection_points(isnan(intersection_points(:,1)),:)=[]; %remove NaN 
-        intersection_points(isnan(intersection_points(:,2)),:)=[]; %remove NaN 
+        %> Process the intersections
+        intersections=[intersection_x(:) intersection_y(:)];
+        intersections(isnan(intersections(:,1)),:)=[]; %remove NaN 
+        intersections(isnan(intersections(:,2)),:)=[]; %remove NaN 
         %assume that the room is not too big, dimensions are unknown but
         %limited by a number, e.g. 100m
-        intersection_points(abs(intersection_points(:,1))>100,:)=[]; %when dimension>100m
-        intersection_points(abs(intersection_points(:,2))>100,:)=[]; %when dimension>100m
+        intersections(abs(intersections(:,1))>100,:)=[]; %when dimension>100m
+        intersections(abs(intersections(:,2))>100,:)=[]; %when dimension>100m
         %remove overlapped or close points (not done
-        for i=1:size(intersection_points,1)-1
-            for j=i+1:size(intersection_points,1)
-                if pdist([intersection_points(i,:);intersection_points(j,:)])<0.1
-                    intersection_points(j,:)=[Inf Inf];
+        for i=1:size(intersections,1)-1
+            for j=i+1:size(intersections,1)
+                if pdist([intersections(i,:);intersections(j,:)])<0.1
+                    intersections(j,:)=[Inf Inf];
                 end
             end
         end
-        intersection_points(abs(intersection_points(:,1))>100,:)=[]; %when dimension>100m
-        intersection_points(abs(intersection_points(:,2))>100,:)=[]; %when dimension>100m
+        intersections(abs(intersections(:,1))>100,:)=[]; %when dimension>100m
+        intersections(abs(intersections(:,2))>100,:)=[]; %when dimension>100m
         %check if a found line has two intersection points
-        if ~isempty(intersection_points)
+        if ~isempty(intersections)
             points_on_foundLines=0;
             for i=1:size(foundLines,1)
                 clear distpl_c
-                for j=1:size(intersection_points,1)
-                    distpl_c(j)=abs(foundLines(i,1)*intersection_points(j,1)+foundLines(i,2)-intersection_points(j,2))/sqrt(foundLines(i,1)^2+1); %distance from an intersection point to a found line
+                for j=1:size(intersections,1)
+                    distpl_c(j)=abs(foundLines(i,1)*intersections(j,1)+foundLines(i,2)-intersections(j,2))/sqrt(foundLines(i,1)^2+1); %distance from an intersection point to a found line
                 end
                 if numel(find(distpl_c<0.01))==2 %make sure there are two intersection points on a found line
                     points_on_foundLines=points_on_foundLines+1;
                 end
             end
             if points_on_foundLines==size(foundLines,1)
-                disp('Show something');
+                disp('Room is successfully reconstructed');
+                robot.RoomBeep;
+                plot(sourcePlot(:,1),sourcePlot(:,2),'b*');
+                hold on
+                line(sourcePlot(:,1),sourcePlot(:,2));
+                plot(intersections(:,1),intersections(:,2),'r*');
             end
         end
     end
